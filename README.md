@@ -1,10 +1,10 @@
 # Cache
 O cache é um mecanismo de armazenamento temporário de dados frequentemente acessados, com o objetivo de melhorar o desempenho do sistema. Ele pode ser usado em diversos níveis, como hardware (por exemplo, cache de CPU) ou software (como o cache de aplicativos ou de API). Em relação ao cache de API, é uma técnica que permite armazenar temporariamente as respostas de chamadas de API para acelerar o acesso em requisições futuras idênticas ou semelhantes. O controle de cache em API é a capacidade de gerenciar e controlar o comportamento do cache, definindo configurações para determinar quais chamadas de API devem ser armazenadas em cache, por quanto tempo e como atualizar ou invalidar o cache quando os dados subjacentes mudam.
 
-#Cookies
+# Cookies
 Cookies são pequenos arquivos de texto armazenados no dispositivo do usuário por um navegador da web. Eles são usados para armazenar informações específicas sobre o usuário e o comportamento do site. Os cookies são amplamente utilizados para rastrear sessões de usuário, armazenar preferências, lembrar carrinhos de compras, autenticar usuários e personalizar a experiência do usuário. Existem dois tipos principais de cookies: cookies de sessão, que são temporários e são apagados quando o navegador é fechado, e cookies persistentes, que permanecem no dispositivo do usuário por um período determinado ou até serem explicitamente excluídos. Os cookies são essenciais para muitas funcionalidades da web moderna, mas é importante garantir que sejam usados de forma ética e em conformidade com as regulamentações de privacidade e proteção de dados.
 
-#Callbacks:
+# Callbacks:
 Callbacks são funções que são passadas como argumentos para outras funções e executadas posteriormente, geralmente quando uma operação assíncrona é concluída. No contexto de JavaScript, os callbacks são comumente usados para lidar com operações assíncronas, como leitura de arquivos, requisições de rede e outras tarefas que não são executadas instantaneamente. O callback é chamado de volta quando a operação é concluída ou quando ocorre algum erro.
 
 Exemplo de callback em JavaScript:
@@ -29,7 +29,7 @@ function carga(n, callback) {
     });
 }
 ````
-#Promises:
+# Promises:
 Promises são uma abstração mais avançada para lidar com operações assíncronas em JavaScript. Elas permitem que você lide com o resultado (valor resolvido) ou erro (rejeição) de uma operação assíncrona de maneira mais estruturada. Em vez de passar uma função de callback diretamente, você pode retornar uma Promise que representa o resultado da operação. Isso torna o código mais legível e evita o "Callback Hell" (encadeamento excessivo de callbacks).
 
 Exemplo de Promise em JavaScript:
@@ -61,11 +61,50 @@ function carga(n) {
 ````
 Callbacks e Promises são frequentemente usados em conjunto com caches e cookies para melhorar o desempenho e a experiência do usuário em aplicações web.
 
-## Caches:
-Callbacks e Promises podem ser usados para controlar o comportamento do cache em aplicações. Por exemplo, ao fazer uma requisição para uma API, podemos usar Promises para lidar com a resposta e decidir se os dados devem ser armazenados em cache. Se os dados ainda não estiverem em cache, podemos fazer uma requisição à API usando callbacks e, quando a resposta chegar, armazenar os dados em cache e usar uma Promise para resolver a requisição original. Em requisições futuras, podemos verificar o cache primeiro usando callbacks para buscar os dados diretamente, economizando tempo e recursos de rede.
+# Controle de cahce
+você pode utilizar variáveis para armazenar a resposta da requisição da API e definir um tempo de validade para o cache. Dessa forma, você pode verificar se o cache ainda é válido antes de realizar uma nova requisição à API. Caso o cache esteja válido, você pode utilizar os dados armazenados em cache, caso contrário, você realiza uma nova chamada à API.
 
+Aqui está um exemplo de como você pode fazer isso:
+````javascript
+document.addEventListener('DOMContentLoaded', function() {
+  // Verifica se há dados em cache e se o cache está válido antes de fazer uma nova requisição
+  const cacheKey = 'bancosCache';
+  const cacheExpiry = 60 * 60 * 1000; // Tempo de validade do cache em milissegundos (1 hora)
 
-## Cookies:
-Callbacks e Promises também são úteis ao trabalhar com cookies. Por exemplo, ao implementar um sistema de autenticação baseado em cookies, podemos usar callbacks para verificar se o cookie de autenticação está presente no navegador do usuário e, se sim, validar as informações de autenticação. Usando Promises, podemos aguardar o resultado da validação antes de permitir que o usuário acesse determinadas partes do site ou execute certas ações.
+  const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+  const currentTime = new Date().getTime();
 
-Em geral, callbacks e Promises são poderosos mecanismos que podem ser aplicados em conjunto com caches e cookies para melhorar o desempenho e a funcionalidade de aplicações web, tornando o código mais organizado e legível ao lidar com operações assíncronas e gerenciamento de dados temporários.
+  if (cachedData && currentTime - cachedData.timestamp < cacheExpiry) {
+    // Utiliza os dados armazenados em cache
+    exibirMensagem(cachedData.quantidadeBancos);
+  } else {
+    // Faz uma nova requisição à API e armazena os dados em cache
+    carga(cacheKey);
+  }
+});
+
+function carga(cacheKey) {
+  fetch('https://brasilapi.com.br/api/pix/v1/participants')
+    .then(response => response.json())
+    .then(data => {
+      const quantidadeBancos = data.length;
+      // Armazena os dados em cache
+      const cacheData = {
+        quantidadeBancos: quantidadeBancos,
+        timestamp: new Date().getTime()
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+
+      exibirMensagem(quantidadeBancos);
+    })
+    .catch(error => {
+      console.log('Ocorreu um erro:', error);
+    });
+}
+
+function exibirMensagem(quantidadeBancos) {
+  const mensagem = `Hoje ${quantidadeBancos} bancos aceitam PIX`;
+  document.getElementById('output').innerText = mensagem;
+}
+````
+Neste exemplo, os dados da resposta da API são armazenados no LocalStorage com um carimbo de data/hora (timestamp). Antes de fazer uma nova requisição à API, o código verifica se o cache ainda é válido com base no tempo de validade (cacheExpiry) estabelecido. Se o cache estiver válido, os dados armazenados em cache são utilizados; caso contrário, uma nova requisição à API é feita, e os dados são atualizados no cache. Isso permite que as informações sejam recuperadas de forma mais rápida em futuras visitas à página, reduzindo o tráfego na rede e melhorando a experiência do usuário.
